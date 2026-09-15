@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "mkdir-build",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "New-Item -ItemType Directory -Force -Path '${fileDirname}/build' | Out-Null"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "gcc-build-run-current",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "${file}",
+                "-finput-charset=GBK",
+                "-fexec-charset=GBK",
+                "-o",
+                "${fileDirname}/build/${fileBasenameNoExtension}.exe",
+                "-std=c17",
+                "-Wall",
+                "-Wpedantic",
+                "-Wextra"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": "mkdir-build",
+            "problemMatcher": "$gcc",
+            "presentation": {
+                "reveal": "always"
+            }
+        }
+    ]
+}
