@@ -28,7 +28,7 @@ struct {
 } book0;
 ```
 
-其他构建结构体的方式参见[构建图书结构体](./smms/struct_book.c)
+其他构建结构体的方式参见[构建图书结构体](./step_by_step/struct_book.c)
 
 ## 初始化结构体变量
 
