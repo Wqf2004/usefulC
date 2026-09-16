@@ -2,39 +2,39 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "mkdir-build",
+            "label": "build-dfm-main",
             "type": "shell",
             "command": "powershell",
             "args": [
                 "-NoProfile",
-                "-Command",
-                "New-Item -ItemType Directory -Force -Path '${fileDirname}/build' | Out-Null"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "gcc-build-run-current",
-            "type": "shell",
-            "command": "gcc",
-            "args": [
-                "${file}",
-                "-finput-charset=GBK",
-                "-fexec-charset=GBK",
-                "-o",
-                "${fileDirname}/build/${fileBasenameNoExtension}.exe",
-                "-std=c17",
-                "-Wall",
-                "-Wpedantic",
-                "-Wextra"
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\dfm\\build.ps1"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "dependsOn": "mkdir-build",
             "problemMatcher": "$gcc",
             "presentation": {
-                "reveal": "always"
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "run-dfm-main",
+            "type": "shell",
+            "command": "${workspaceFolder}\\dfm\\build\\main.exe",
+            "options": {
+                "cwd": "${workspaceFolder}\\dfm"
+            },
+            "group": "test",
+            "dependsOn": "build-dfm-main",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
             }
         }
     ]

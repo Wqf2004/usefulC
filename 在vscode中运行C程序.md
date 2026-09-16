@@ -15,4 +15,8 @@
 
 ## 2. 构建与运行
 
-打开一个.c文件，先使用快捷键 Ctrl+Shift+B，它会调用.vscode/task.json中的指令完成构建，然后右键选择 Run Code（Code Runner 扩展）运行。
+对于非dfm/src下的.c文件的运行方法，直接进入对应的.c文件，右击，选择"Run Code"。
+
+对于dfm/src下的.c文件的运行方法：
+只能在main.c中写执行代码，其他.c文件下函数或者自定义结构体。
+使用Ctrl+Shift+B构建，再使用F5运行/调试。
