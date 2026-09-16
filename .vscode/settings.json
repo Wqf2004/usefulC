@@ -1,0 +1,7 @@
+{
+    "code-runner.runInTerminal": true,
+    "code-runner.saveFileBeforeRun": true,
+    "code-runner.executorMap": {
+        "c": "cd $dir; New-Item -ItemType Directory -Force -Path build | Out-Null; gcc $fileName -finput-charset=GBK -fexec-charset=GBK -o ./build/$fileNameWithoutExt.exe -std=c17 -Wall -Wpedantic -Wextra; ./build/$fileNameWithoutExt.exe"
+    }
+}
