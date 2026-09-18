@@ -106,14 +106,10 @@ int file_view(const char *path)
 
     char line[LINE_BUF_SIZE];
     int no = 0;
-    while (fgets(line, sizeof(line), fp) != NULL) {
+    while (fgets(line, sizeof(line), fp) != NULL) 
+    {
         ++no;
         printf("%4d  %s", no, line);
-        /* 末行没有换行时补一个，免得提示符跟在内容后面 */
-        size_t n = strlen(line);
-        if (n == 0 || line[n - 1] != '\n') {
-            putchar('\n');
-        }
     }
 
     fclose(fp);
@@ -158,7 +154,7 @@ int file_find(const char *path, const char *keyword)
 /**
  * @brief 把文件所有行读进 lines 二维数组，返回行数
  *        文件不存在时返回 0（之后用 "w" 写回就会自动新建）
- *        顺便保证每行末尾都有 '\n'，这样读进来什么样写回就什么样
+ *        文件存在时返回文件的总行数
  */
 static int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
 {
@@ -168,17 +164,21 @@ static int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
     }
 
     int n = 0;
-    while (n < MAX_LINES && fgets(lines[n], LINE_BUF_SIZE, fp) != NULL) {
-        size_t len = strlen(lines[n]);
-        if (len > 0 && lines[n][len - 1] != '\n' && len < LINE_BUF_SIZE - 1) {
-            lines[n][len] = '\n';        /* 文件最后一行往往没有换行，补上 */
-            lines[n][len + 1] = '\0';
-        }
+    while (n < MAX_LINES && fgets(lines[n], LINE_BUF_SIZE, fp) != NULL) 
+    {
         n++;
+    }
+    /* 文件最后一行往往没有换行，补上 */
+    n--;
+    size_t len = strlen(lines[n]);
+    if (len > 0 && lines[n][len - 1] != '\n' && len < LINE_BUF_SIZE - 1) 
+    {
+        lines[n][len] = '\n';        
+        lines[n][len + 1] = '\0';
     }
 
     fclose(fp);
-    return n;
+    return n+1;
 }
 
 /**
