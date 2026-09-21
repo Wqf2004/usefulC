@@ -59,6 +59,60 @@ int file_rename(const char *old_path, const char *new_path)
 }
 
 /**
+ * @brief 判断文件是否存在（只读探测，不修改文件内容）
+ * @param path 文件路径，如 "a.txt"
+ * @return 1=存在；0=不存在（或无权限/是目录等无法以读方式打开的情况）
+ */
+int file_exists(const char *path)
+{
+    FILE *fp = fopen(path, "rb");
+    if (fp != NULL) {
+        fclose(fp);
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * @brief 二进制复制文件（按字节原样拷贝，文本/二进制文件均适用）
+ * @param src 源文件路径
+ * @param dst 目标文件路径（已存在会被覆盖）
+ * @return 0成功 -1失败（源打不开/目标建不了/写入异常）
+ */
+int file_copy(const char *src, const char *dst)
+{
+    FILE *fin = fopen(src, "rb");
+    if (fin == NULL) {
+        perror("fopen src failed");
+        return -1;
+    }
+    FILE *fout = fopen(dst, "wb");
+    if (fout == NULL) {
+        perror("fopen dst failed");
+        fclose(fin);
+        return -1;
+    }
+
+    char buf[4096];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), fin)) > 0) {
+        if (fwrite(buf, 1, n, fout) != n) {   /* 磁盘写满等短写异常 */
+            perror("fwrite failed");
+            fclose(fin);
+            fclose(fout);
+            return -1;
+        }
+    }
+
+    fclose(fin);
+    if (fclose(fout) == EOF) {
+        perror("fclose dst failed");
+        return -1;
+    }
+    return 0;
+}
+
+/**
  * @brief 文件末尾追加内容
  * @param path    文件路径，如 "b.txt"
  * @param content 要写入的字符串
@@ -118,6 +172,11 @@ int file_view(const char *path)
 
 /**
  * @brief 按关键字查找行，返回命中行数
+ * @param path 文件路径，如 "b.txt"
+ * @param keyword 搜索关键字
+ * @return 成功时返回命中行数（>= 0）；
+ *         keyword 为 NULL 或空串、文件打开失败时返回 -1。
+ *         返回 0 表示文件正常打开，但没有匹配行。
  */
 int file_find(const char *path, const char *keyword)
 {
@@ -151,11 +210,7 @@ int file_find(const char *path, const char *keyword)
     return hits;
 }
 
-/**
- * @brief 把文件所有行读进 lines 二维数组，返回行数
- *        文件不存在时返回 0（之后用 "w" 写回就会自动新建）
- *        文件存在时返回文件的总行数
- */
+/* 把文件所有行读进 lines 二维数组并返回行数；文件不存在返回 0，文件最后一行无换行时补 '\n' */
 static int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
 {
     FILE *fp = fopen(path, "r");
@@ -181,9 +236,7 @@ static int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
     return n+1;
 }
 
-/**
- * @brief 把 n 行整体写回文件（"w" 模式一打开就会先清空原文件）
- */
+/* 把 n 行整体写回文件（"w" 模式一打开就会先清空原文件）*/
 static int write_all_lines(const char *path, char lines[][LINE_BUF_SIZE], int n)
 {
     FILE *fp = fopen(path, "w");
@@ -203,7 +256,9 @@ static int write_all_lines(const char *path, char lines[][LINE_BUF_SIZE], int n)
 
 /**
  * @brief 在第 line_no 行之前插入一行（行号从 1 开始）
- *        line_no 超过末尾时自动追加到最后
+ * @param path 文件路径，如 "b.txt"
+ * @param line_no 行号
+ * @param content 插入的内容 
  * @return 0 成功，-1 失败
  */
 int file_insert_line(const char *path, int line_no, const char *content)
@@ -270,6 +325,9 @@ int file_delete_line(const char *path, int line_no)
 
 /**
  * @brief 把第 line_no 行整行替换成 content（行号从 1 开始）
+ * @param path 文件路径，如 "b.txt"
+ * @param line_no 行号
+ * @param content 插入的内容
  * @return 0 成功，-1 行号不存在
  */
 int file_replace_line(const char *path, int line_no, const char *content)
@@ -289,7 +347,9 @@ int file_replace_line(const char *path, int line_no, const char *content)
 
 /**
  * @brief 在文件每一行里查找 old_str，全部替换成 new_str
- *        new_str 比 old_str 长也没关系；new_str 传 "" 就是删除
+ * @param path 文件路径，如 "b.txt"
+ * @param old_str 老字段
+ * @param new_str 新字段
  * @return 替换了几处；old_str 为空返回 -1
  */
 int file_replace_str(const char *path, const char *old_str, const char *new_str)

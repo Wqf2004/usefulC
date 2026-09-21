@@ -1,14 +1,16 @@
 #ifndef __FILE_OP_DEFINED
 #define __FILE_OP_DEFINED
 
-#define LINE_BUF_SIZE 1024
-#define MAX_LINES 1000
+#define LINE_BUF_SIZE 1024 /* 一行最大的存储容量，单位为字节 */
+#define MAX_LINES 1000     /* 一个文件最大的存储行数 */
 
-/* ===== 文件本身的创建和删改 ===== */
+/* ===== 文件本身的创建、删改，判断是否存在，复制 ===== */
 
-int file_create(const char *path);   /* 新建一个0字节空文件；已存在则不覆盖，返回-1 */
+int file_create(const char *path);   
 int file_del(const char *path);
 int file_rename(const char *old_path, const char *new_path);
+int file_exists(const char *path);
+int file_copy(const char *src, const char *dst);
 
 /* ========================================================================
  *  文件"内容"级的增删改查（文本文件，按行操作）
@@ -30,7 +32,7 @@ int file_add(const char *path, const char *content, int mode);
 int file_view(const char *path);
 int file_find(const char *path, const char *keyword);
 int file_insert_line(const char *path, int line_no, const char *content);
-int file_delete_line(const char *path, int line_no); /* 行号从1开始；-1=删除最末尾行 */
+int file_delete_line(const char *path, int line_no); 
 int file_replace_line(const char *path, int line_no, const char *content);
 int file_replace_str(const char *path, const char *old_str, const char *new_str);
 

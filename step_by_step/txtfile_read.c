@@ -5,7 +5,7 @@
 int main()
 {
     /* 打开文件，获取文件指针 */
-    FILE *fp = fopen("../dataset/test.txt", "r");
+    FILE *fp = fopen("../data/test.txt", "r");
     if (fp == NULL)
     {
         printf("打开文件失败\n");
