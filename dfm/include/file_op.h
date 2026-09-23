@@ -4,10 +4,18 @@
 #define LINE_BUF_SIZE 1024 /* 一行最大的存储容量，单位为字节 */
 #define MAX_LINES 1000     /* 一个文件最大的存储行数 */
 
-/* ===== 文件本身的创建、删改，判断是否存在，复制 ===== */
+/* ========================================================================
+ * 文件本身的创建
+ * 整体覆盖：清空原内容后写入新内容
+ * 清空文件：保留文件本身，截断为 0 字节
+ * 文件变更路径
+ * 判断是否存在及复制
+ * ======================================================================== */
 
 int file_create(const char *path);   
 int file_del(const char *path);
+int file_overwrite(const char *path, const char *content); 
+int file_clear(const char *path);                       
 int file_rename(const char *old_path, const char *new_path);
 int file_exists(const char *path);
 int file_copy(const char *src, const char *dst);
@@ -35,5 +43,8 @@ int file_insert_line(const char *path, int line_no, const char *content);
 int file_delete_line(const char *path, int line_no); 
 int file_replace_line(const char *path, int line_no, const char *content);
 int file_replace_str(const char *path, const char *old_str, const char *new_str);
+
+int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE]);
+int write_all_lines(const char *path, char lines[][LINE_BUF_SIZE], int n);
 
 #endif

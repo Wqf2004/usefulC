@@ -27,6 +27,56 @@ int file_create(const char *path)
 }
 
 /**
+ * @brief 整体覆盖文件：用 content 替换文件全部内容
+ *        与 file_add 的"追加写"不同，本函数先截断原内容再重写
+ * @param path    文件路径
+ * @param content 新的完整内容；传空串等价于只清空
+ * @return 0 成功；-1 打开/写入失败（目标目录不存在、无权限）
+ */
+int file_overwrite(const char *path, const char *content)
+{
+    FILE *fp = fopen(path, "w");     /* "w" = 打开即截断为 0，再重写 */
+    if (fp == NULL) {
+        perror("fopen failed");
+        return -1;
+    }
+
+    if (content != NULL && content[0] != '\0') {
+        fputs(content, fp);
+        fputc('\n', fp);            /* 统一以换行结尾 */
+    }
+
+    if (fclose(fp) == EOF) {
+        perror("fclose failed");
+        return -1;
+    }
+    return 0;
+}
+
+/**
+ * @brief 清空文件：保留文件本身，仅把内容截断为 0 字节
+ *        与 file_del 的区别——file_del 连文件一起删，本函数只清内容
+ * @param path 文件路径
+ * @return 0 成功；-1 文件不存在或打开失败
+ */
+int file_clear(const char *path)
+{
+    if (!file_exists(path)) {        /* 只清空已存在文件，不悄悄新建 */
+        printf("file not exists: %s\n", path);
+        return -1;
+    }
+
+    FILE *fp = fopen(path, "w");     /* "w" 截断为 0，一字节不写即清空 */
+    if (fp == NULL) {
+        perror("fopen failed");
+        return -1;
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+/**
  * @brief 删除指定文件
  * @param path 文件路径，如 "a.tmp"
  * @return 0成功 -1失败，常见失败原因：文件不存在、路径是目录、权限不足
@@ -211,7 +261,7 @@ int file_find(const char *path, const char *keyword)
 }
 
 /* 把文件所有行读进 lines 二维数组并返回行数；文件不存在返回 0，文件最后一行无换行时补 '\n' */
-static int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
+int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
 {
     FILE *fp = fopen(path, "r");
     if (fp == NULL) {
@@ -237,7 +287,7 @@ static int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
 }
 
 /* 把 n 行整体写回文件（"w" 模式一打开就会先清空原文件）*/
-static int write_all_lines(const char *path, char lines[][LINE_BUF_SIZE], int n)
+int write_all_lines(const char *path, char lines[][LINE_BUF_SIZE], int n)
 {
     FILE *fp = fopen(path, "w");
     if (fp == NULL) {

@@ -4,12 +4,14 @@
 #include "security.h"
 
 #define LINE_LEN 260
+static int isGhostMode; /* 是否处于无痕操作模式（1=是）*/
 
 /* 演示一：文件删除流程（无痕备份 + 二次确认 + file_del） */
 static void demo_file_delete(void)
 {
     char path[LINE_LEN];
 
+    isGhostMode = 1;      // 标记为无痕模式
     backupGhostFiles();   /* 无痕模式：先备份 a/b.txt 为 .ghost */
 
     printf("\n======== 演示一：文件删除流程（二次确认） ========\n");
@@ -40,6 +42,11 @@ static void demo_file_delete(void)
         } else {
             printf("  [失败] 删除未成功：%s\n", path);
         }
+    }
+    if (isGhostMode)
+    {
+        restoreGhostFiles(); // 退出无痕模式
+        isGhostMode = 0;
     }
 }
 
