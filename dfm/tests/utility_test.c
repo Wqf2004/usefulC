@@ -4,6 +4,8 @@
 
 #define STUDENT_FIXTURE "dfm/build/utility-students.tmp"
 #define GRADE_FIXTURE "dfm/build/utility-grades.tmp"
+#define DUPLICATE_FIXTURE "dfm/build/utility-duplicate-students.tmp"
+#define INVALID_FIXTURE "dfm/build/utility-invalid-students.tmp"
 #define USER_FIXTURE "dfm/build/utility-users.tmp"
 #define LOGIN_LOG "dfm/build/utility-login.tmp"
 #define DELETE_LOG "dfm/build/utility-delete.tmp"
@@ -34,6 +36,7 @@ int main(void)
     Student student_matches[4];
     GradeRecord grades[4];
     GradeRecord grade_matches[4];
+    GradeRecord stable_grades[3] = {0};
     CourseStatistic statistics[4];
     GradeRecord calculated = {0};
     double earned_credit_total = 0.0;
@@ -46,6 +49,8 @@ int main(void)
 
     remove(STUDENT_FIXTURE);
     remove(GRADE_FIXTURE);
+    remove(DUPLICATE_FIXTURE);
+    remove(INVALID_FIXTURE);
     remove(USER_FIXTURE);
     remove(LOGIN_LOG);
     remove(DELETE_LOG);
@@ -55,8 +60,13 @@ int main(void)
         "1001 Alice F 101 13800138000\n"
         "1002 Bob M 101 13900139000\n"
         "1003 Carol F 102 13700137000\n"));
+    CHECK(utility_load_students(STUDENT_FIXTURE, students, 2, &student_count) ==
+          UTILITY_CAPACITY_ERROR);
+    CHECK(student_count == 0);
     CHECK(utility_validate_phone("13800138000"));
     CHECK(!utility_validate_phone("12800138000"));
+    CHECK(!utility_validate_phone("1380013800x"));
+    CHECK(!utility_validate_phone(NULL));
     CHECK(utility_load_students(STUDENT_FIXTURE, students, 4, &student_count) == UTILITY_OK);
     CHECK(student_count == 3);
     CHECK(strcmp(students[0].id, "1001") == 0);
@@ -65,11 +75,29 @@ int main(void)
     CHECK(student_count == 3);
     CHECK(utility_find_student(students, student_count, "1002", &student_matches[0]) == UTILITY_OK);
     CHECK(strcmp(student_matches[0].name, "Bob") == 0);
+    CHECK(utility_find_student(students, student_count, "100", &student_matches[0]) ==
+          UTILITY_NOT_FOUND);
+    CHECK(write_fixture(DUPLICATE_FIXTURE,
+        "2001 Alex F 201 13800138000\n"
+        "2002 Alex M 202 13900139000\n"));
+    CHECK(utility_load_students(DUPLICATE_FIXTURE, student_matches, 4,
+                                &student_count) == UTILITY_OK);
+    CHECK(utility_find_student(student_matches, student_count, "Alex",
+                                &students[0]) == UTILITY_DUPLICATE);
+    CHECK(write_fixture(INVALID_FIXTURE,
+        "3001 Dana F 301 12800138000\n"));
+    CHECK(utility_load_students(INVALID_FIXTURE, students, 4, &student_count) ==
+          UTILITY_FORMAT_ERROR);
+    CHECK(utility_load_students(STUDENT_FIXTURE, students, 4, &student_count) == UTILITY_OK);
     CHECK(utility_find_student(students, student_count, "Carol", &student_matches[0]) == UTILITY_OK);
     CHECK(utility_find_students_by_dorm(students, student_count, "101",
                                          student_matches, 4, &statistic_count) == UTILITY_OK);
     CHECK(statistic_count == 2);
     CHECK(strcmp(student_matches[1].name, "Bob") == 0);
+    CHECK(utility_find_students_by_dorm(students, student_count, "101",
+                                         student_matches, 1, &statistic_count) ==
+          UTILITY_CAPACITY_ERROR);
+    CHECK(statistic_count == 2);
 
     CHECK(write_fixture(GRADE_FIXTURE,
         "# grade header\n"
@@ -99,12 +127,39 @@ int main(void)
     CHECK(strcmp(statistics[0].course_id, "MTH") == 0);
     CHECK(statistics[0].student_count == 2);
     CHECK(statistics[0].average_score > 81.99 && statistics[0].average_score < 82.01);
+    CHECK(utility_course_statistics(grades, grade_count, statistics, 1,
+                                     &statistic_count) == UTILITY_CAPACITY_ERROR);
+
+    strcpy(stable_grades[0].student_id, "first");
+    strcpy(stable_grades[1].student_id, "second");
+    strcpy(stable_grades[2].student_id, "third");
+    stable_grades[0].total_score = 80.0f;
+    stable_grades[1].total_score = 80.0f;
+    stable_grades[2].total_score = 70.0f;
+    CHECK(utility_sort_grades(stable_grades, 3, GRADE_SORT_TOTAL_SCORE,
+                               GRADE_SORT_DESCENDING) == UTILITY_OK);
+    CHECK(strcmp(stable_grades[0].student_id, "first") == 0);
+    CHECK(strcmp(stable_grades[1].student_id, "second") == 0);
+    CHECK(utility_sort_grades(stable_grades, 3, (GradeSortKey)99,
+                               GRADE_SORT_ASCENDING) == UTILITY_INVALID_ARGUMENT);
 
     CHECK(utility_get_student_grades(grades, grade_count, "1001", grade_matches,
                                       4, &statistic_count,
                                       &earned_credit_total) == UTILITY_OK);
     CHECK(statistic_count == 2);
     CHECK(earned_credit_total > 4.39 && earned_credit_total < 4.41);
+    CHECK(utility_get_student_grades(grades, grade_count, "1001", grade_matches,
+                                      1, &statistic_count,
+                                      &earned_credit_total) == UTILITY_CAPACITY_ERROR);
+    CHECK(statistic_count == 2);
+    CHECK(utility_get_student_grades(grades, grade_count, "9999", grade_matches,
+                                      4, &statistic_count,
+                                      &earned_credit_total) == UTILITY_OK);
+    CHECK(statistic_count == 0 && earned_credit_total == 0.0);
+
+    calculated.usual_score = 101.0f;
+    CHECK(utility_calculate_grade(&calculated) == UTILITY_INVALID_RECORD);
+    calculated.usual_score = 80.0f;
 
     memset(&calculated, 0, sizeof(calculated));
     strcpy(calculated.student_id, "1001");
@@ -118,6 +173,15 @@ int main(void)
     CHECK(calculated.total_score == 100.0f && calculated.earned_credit == 2.0f);
     CHECK(utility_load_grades(GRADE_FIXTURE, grades, 4, &grade_count) == UTILITY_OK);
     CHECK(grade_count == 4);
+    strcpy(calculated.student_id, "9999");
+    CHECK(utility_record_grade(STUDENT_FIXTURE, GRADE_FIXTURE, &calculated) ==
+          UTILITY_NOT_FOUND);
+    strcpy(calculated.student_id, "1001");
+
+    CHECK(utility_delete_student(STUDENT_FIXTURE, GRADE_FIXTURE,
+                                  DELETE_LOG, "9999") == UTILITY_NOT_FOUND);
+    CHECK(utility_delete_student(STUDENT_FIXTURE, GRADE_FIXTURE,
+                                  DELETE_LOG, "bad id") == UTILITY_INVALID_RECORD);
 
     CHECK(utility_delete_student(STUDENT_FIXTURE, GRADE_FIXTURE,
                                   DELETE_LOG, "1001") == UTILITY_OK);
@@ -135,6 +199,8 @@ int main(void)
     fclose(file);
 
     CHECK(utility_auth_register(USER_FIXTURE, "alice_01", "correct horse battery") == UTILITY_OK);
+    CHECK(utility_auth_register(USER_FIXTURE, "ab", "correct horse battery") ==
+          UTILITY_INVALID_ARGUMENT);
     CHECK(utility_auth_register(USER_FIXTURE, "alice_01", "correct horse battery") == UTILITY_DUPLICATE);
     CHECK(utility_auth_login(USER_FIXTURE, LOGIN_LOG, "alice_01",
                               "correct horse battery") == UTILITY_OK);
@@ -157,6 +223,8 @@ int main(void)
 
     remove(STUDENT_FIXTURE);
     remove(GRADE_FIXTURE);
+    remove(DUPLICATE_FIXTURE);
+    remove(INVALID_FIXTURE);
     remove(USER_FIXTURE);
     remove(LOGIN_LOG);
     remove(DELETE_LOG);
