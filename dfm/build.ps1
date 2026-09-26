@@ -17,7 +17,7 @@ Write-Host '>> 编译源文件:'
 $files | ForEach-Object { Write-Host "   $_" }
 
 & gcc @files -finput-charset=GBK -fexec-charset=GBK -std=c17 `
-    -Wall -Wextra -Wpedantic "-I$incDir" -o $outExe
+    -Wall -Wextra -Wpedantic "-I$incDir" -lbcrypt -o $outExe
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ">> 构建成功: $outExe"
