@@ -44,6 +44,7 @@ int file_delete_line(const char *path, int line_no);
 int file_replace_line(const char *path, int line_no, const char *content);
 int file_replace_str(const char *path, const char *old_str, const char *new_str);
 
+/* 读取时保留文件原有行尾；空文件返回 0 */
 int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE]);
 int write_all_lines(const char *path, char lines[][LINE_BUF_SIZE], int n);
 
