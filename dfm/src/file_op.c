@@ -260,7 +260,7 @@ int file_find(const char *path, const char *keyword)
     return hits;
 }
 
-/* 把文件所有行读进 lines 二维数组并返回行数；文件不存在返回 0，文件最后一行无换行时补 '\n' */
+/* 把文件所有行读进 lines 二维数组并返回行数；文件不存在返回 0，保留原有行尾 */
 int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
 {
     FILE *fp = fopen(path, "r");
@@ -273,17 +273,9 @@ int read_all_lines(const char *path, char lines[][LINE_BUF_SIZE])
     {
         n++;
     }
-    /* 文件最后一行往往没有换行，补上 */
-    n--;
-    size_t len = strlen(lines[n]);
-    if (len > 0 && lines[n][len - 1] != '\n' && len < LINE_BUF_SIZE - 1) 
-    {
-        lines[n][len] = '\n';        
-        lines[n][len + 1] = '\0';
-    }
 
     fclose(fp);
-    return n+1;
+    return n;
 }
 
 /* 把 n 行整体写回文件（"w" 模式一打开就会先清空原文件）*/
@@ -325,6 +317,18 @@ int file_insert_line(const char *path, int line_no, const char *content)
     if (n >= MAX_LINES) {
         fprintf(stderr, "too many lines (max %d)\n", MAX_LINES);
         return -1;
+    }
+
+    if (n > 0 && line_no == n + 1) {
+        size_t last_len = strlen(lines[n - 1]);
+        if (last_len > 0 && lines[n - 1][last_len - 1] != '\n') {
+            if (last_len >= LINE_BUF_SIZE - 1) {
+                fprintf(stderr, "last line is too long to append a newline\n");
+                return -1;
+            }
+            lines[n - 1][last_len] = '\n';
+            lines[n - 1][last_len + 1] = '\0';
+        }
     }
 
     int i;
@@ -390,7 +394,10 @@ int file_replace_line(const char *path, int line_no, const char *content)
         return -1;
     }
 
-    snprintf(lines[line_no - 1], LINE_BUF_SIZE, "%s\n", content);
+    size_t line_len = strlen(lines[line_no - 1]);
+    const char *line_ending = line_len > 0 && lines[line_no - 1][line_len - 1] == '\n'
+        ? "\n" : "";
+    snprintf(lines[line_no - 1], LINE_BUF_SIZE, "%s%s", content, line_ending);
 
     return write_all_lines(path, lines, n);
 }
