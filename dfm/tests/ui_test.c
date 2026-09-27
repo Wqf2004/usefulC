@@ -88,28 +88,55 @@ int main(void)
     CHECK(CREATE_DIR(fixture_dir) == 0);
     CHECK(CREATE_DIR(data_dir) == 0);
     CHECK(write_fixture(input_path,
+        "\n"
+        "invalid\n"
+        "9\n"
+        "2\n"
+        "ui_test\n"
+        "1234567\n"
+        "2\n"
+        "ui_test\n"
+        "TestPassword123\n"
         "2\n"
         "ui_test\n"
         "TestPassword123\n"
         "1\n"
         "ui_test\n"
+        "WrongPassword123\n"
+        "1\n"
+        "ui_test\n"
         "TestPassword123\n"
+        "8\n"
         "4\n"
+        "\n"
         "9999\n"
+        "BIO WITHSPACE\n"
         "BIO\n"
         "Biology\n"
-        "3\n"
-        "80\n"
         "-1\n"
-        "90\n"
+        "3\n"
+        "101\n"
+        "0\n"
+        "-0.5\n"
+        "-1\n"
+        "100.1\n"
+        "0\n"
         "4\n"
         "1001\n"
         "BIO\n"
         "Biology\n"
-        "3\n"
-        "80\n"
+        "0\n"
+        "0\n"
         "-1\n"
-        "90\n"
+        "0\n"
+        "4\n"
+        "1001\n"
+        "MAX\n"
+        "MaxScore\n"
+        "3\n"
+        "100\n"
+        "100\n"
+        "100\n"
         "3\n"
         "1001\n"
         "0\n"
@@ -141,16 +168,23 @@ int main(void)
     CHECK(file_contains(output_path, "MTH"));
     CHECK(file_contains(output_path, "Math"));
     CHECK(file_contains(output_path, "BIO Biology"));
+    CHECK(file_contains(output_path, "MAX MaxScore"));
     CHECK(file_contains(output_path, "87.00"));
+    CHECK(file_contains(output_path, "100.00"));
+    CHECK(file_contains(output_path, "5.40"));
     CHECK(file_contains(grade_path,
-                        "1001 BIO Biology 3.00 80.00 -1.00 90.00 87.00 2.40"));
+                        "1001 BIO Biology 0.00 0.00 -1.00 0.00 0.00 0.00"));
+    CHECK(file_contains(grade_path,
+                        "1001 MAX MaxScore 3.00 100.00 100.00 100.00 100.00 3.00"));
     user_file = fopen(user_path, "r");
     CHECK(user_file != NULL);
     CHECK(fgets(user_line, sizeof(user_line), user_file) != NULL);
-    fclose(user_file);
     CHECK(strncmp(user_line, "ui_test$", 8) == 0);
     CHECK(strstr(user_line, "TestPassword123") == NULL);
+    CHECK(fgets(user_line, sizeof(user_line), user_file) == NULL);
+    fclose(user_file);
     CHECK(file_contains(login_path, "ui_test SUCCESS"));
+    CHECK(file_contains(login_path, "ui_test FAILURE"));
 
     remove(input_path);
     remove(output_path);
@@ -166,6 +200,6 @@ int main(void)
     rmdir(fixture_dir);
 #endif
 
-    fprintf(stderr, "UI registration, login, and grade-query test passed\n");
+    fprintf(stderr, "UI boundary and end-to-end tests passed\n");
     return 0;
 }
