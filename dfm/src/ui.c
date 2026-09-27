@@ -254,6 +254,11 @@ static void record_grade(void)
     strcpy(grade.course_id, course_id);
     strcpy(grade.course_name, course_name);
     result = utility_record_grade(student_file, grade_file, &grade);
+    if (result == UTILITY_NOT_FOUND) {
+        printf("学号 %s 不存在于学生信息文件 %s，请先手动补充学生记录后再录入成绩。\n",
+               student_id, student_file);
+        return;
+    }
     show_result(result);
     if (result == UTILITY_OK) {
         print_grade(&grade);
