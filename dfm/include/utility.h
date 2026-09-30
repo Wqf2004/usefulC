@@ -39,7 +39,7 @@ typedef struct CourseStatistic
 {
     char course_id[UTILITY_COURSE_ID_SIZE];
     char course_name[UTILITY_COURSE_NAME_SIZE];
-    size_t student_count;
+    int student_count;
     double average_score;
 } CourseStatistic;
 
@@ -74,9 +74,9 @@ int utility_validate_phone(const char *phone);
 
 /* 按现有空白分隔格式读取文件，允许文件包含表头。 */
 UtilityResult utility_load_students(const char *path, Student *students,
-                                      size_t capacity, size_t *count);
+                                      size_t capacity, int *count);
 UtilityResult utility_load_grades(const char *path, GradeRecord *grades,
-                                    size_t capacity, size_t *count);
+                                    size_t capacity, int *count);
 
 /* 按学号或姓名精确查询学生，或按宿舍号查询学生列表。 */
 UtilityResult utility_find_student(const Student *students, size_t count,
@@ -86,7 +86,7 @@ UtilityResult utility_find_students_by_dorm(const Student *students,
                                               const char *dorm,
                                               Student *matches,
                                               size_t capacity,
-                                              size_t *count);
+                                              int *count);
 
 /* 查询学生的全部成绩，并返回实得学分总和。 */
 UtilityResult utility_get_student_grades(const GradeRecord *grades,
@@ -94,7 +94,7 @@ UtilityResult utility_get_student_grades(const GradeRecord *grades,
                                            const char *student_id,
                                            GradeRecord *matches,
                                            size_t capacity,
-                                           size_t *count,
+                                           int *count,
                                            double *earned_credit_total);
 /* 录入成绩前自动计算综合成绩和实得学分，且学号必须存在于学生文件中。 */
 UtilityResult utility_record_grade(const char *student_file,
@@ -118,7 +118,7 @@ UtilityResult utility_course_statistics(const GradeRecord *grades,
                                           size_t grade_count,
                                           CourseStatistic *statistics,
                                           size_t capacity,
-                                          size_t *count);
+                                          int *count);
 
 /* 用户名为 3 到 32 位字母、数字或下划线；密码长度为 8 到 128 字节。 */
 UtilityResult utility_auth_register(const char *user_file,

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <conio.h>
 #include "security.h"
 #include "file_op.h"
 
@@ -332,61 +333,106 @@ const char *validate_msg(VResult r)
 }
 
 /**
- * @brief 带提示语的安全行输入（统一入口，替代各处裸 fgets）
+ * @brief 通用安全输入入口（普通行输入 / 掩码密码输入二合一）
  *
  *        行为：
- *          1) 先打印 tip 提示语并立即刷新（无缓冲场景也能正常显示）；
- *          2) 用 fgets 从标准输入读取一整行，最多写入 size-1 个字节并自动补 '\0'；
- *          3) 自动剥除行末换行符 '\n'，并兼容 Windows CRLF 的行尾 '\r'；
- *          4) 若一行超长、缓冲区装不下，则排空该行剩余字符直到 '\n'/EOF，
- *             防止残留内容污染下一次输入。
+ *          1) 先打印 tip 提示语并立即刷新；
+ *          2) mask == 0 时，走 fgets 路径（普通行输入）：
+ *               - 读入一整行，最多 size-1 字节，自动补 '\0'；
+ *               - 剥除行末 '\n' 与 Windows CRLF 的 '\r'；
+ *               - 若一行超长装不下，排空该行剩余字符直到 '\n'/EOF，
+ *                 防止残留内容污染下一次输入。
+ *          3) mask != 0 时，走逐字符掩码路径（密码输入）：
+ *               - 使用 _getch() 不回显读取；
+ *               - 支持退格删除（'\b'）；
+ *               - 输入达到 size-1 后不再接收新字符；
+ *               - 回车（'\r'）结束，输出一个换行。
  *
  * @param tip  提示语字符串（如 "请选择："）；传 NULL 表示不打印任何提示
- * @param buf  调用方提供的输出缓冲区，返回时存放不含行末换行符的内容
+ * @param buf  输出缓冲区，返回时存放不含行末换行符的内容
  * @param size 缓冲区总容量（字节，含结尾 '\0'），实际最多读入 size-1 字节
+ * @param mask 掩码字符：0 表示普通输入；非 0（如 '*'）表示密码输入
  * @return 成功：读入内容的字节长度（不含结尾 '\0'，用户直接回车时为 0）；
- *         失败：buf 为 NULL / size<=0，或 fgets 读到 EOF/出错时返回 -1
- *               （EOF 场景会同时把 buf 置为空串 ""）
+ *         失败：buf 为 NULL / size <= 0，或读取到 EOF/出错时返回 -1
+ *               （EOF 场景会把 buf 置为空串 ""）
  */
-int prompt_input(const char *tip, char *buf, int size)
+int prompt_input_ex(const char *tip, char *buf, int size, char mask)
 {
-    int ch;
-    size_t len;
-
     if (buf == NULL || size <= 0)
     {
         return -1;
     }
+    buf[0] = '\0';
+
     if (tip != NULL)
     {
         printf("%s", tip);
         fflush(stdout);
     }
-    if (fgets(buf, size, stdin) == NULL)
+
+    /* ---------- 普通行输入：fgets 路径 ---------- */
+    if (mask == 0)
     {
-        buf[0] = '\0';
-        return -1;
+        int ch;
+        size_t len;
+
+        if (fgets(buf, size, stdin) == NULL)
+        {
+            buf[0] = '\0';
+            return -1;
+        }
+
+        len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n')
+        {
+            buf[len - 1] = '\0';
+            len--;
+        }
+        else
+        {
+            /* 一行没读完，排空残留 */
+            while ((ch = getchar()) != '\n' && ch != EOF)
+            {
+            }
+        }
+        if (len > 0 && buf[len - 1] == '\r')
+        { /* 兼容 CRLF */
+            buf[len - 1] = '\0';
+            len--;
+        }
+        return (int)len;
     }
 
-    len = strlen(buf);
-    if (len > 0 && buf[len - 1] == '\n')
+    /* ---------- 掩码输入：逐字符 _getch 路径 ---------- */
     {
-        buf[len - 1] = '\0';
-        len--;
-    }
-    else
-    {
-        /* 一行没读完，排空残留 */
-        while ((ch = getchar()) != '\n' && ch != EOF)
+        int i = 0;
+        int ch;
+
+        while ((ch = getch()) != '\r') /* Windows 回车为 '\r' */
         {
+            if (ch == '\b') /* 退格 */
+            {
+                if (i > 0)
+                {
+                    i--;
+                    printf("\b \b"); /* 擦除一个掩码字符 */
+                    fflush(stdout);
+                }
+            }
+            else if (i < size - 1)
+            {
+                buf[i++] = (char)ch;
+                putchar(mask);
+                fflush(stdout);
+            }
+            /* 超出容量则忽略，不写入 */
         }
+
+        buf[i] = '\0';
+        putchar('\n');
+        fflush(stdout);
+        return i;
     }
-    if (len > 0 && buf[len - 1] == '\r')
-    { /* 兼容 CRLF */
-        buf[len - 1] = '\0';
-        len--;
-    }
-    return (int)len;
 }
 
 /* 新建暂存目录，已存在不算错 */

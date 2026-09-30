@@ -46,7 +46,7 @@ UtilityResult utility_find_students_by_dorm(const Student *students,
                                               const char *dorm,
                                               Student *matches,
                                               size_t capacity,
-                                              size_t *count)
+                                              int *count)
 {
     /* 先统计匹配数量，确认输出空间足够后再复制结果。 */
     size_t i;
@@ -80,7 +80,7 @@ UtilityResult utility_get_student_grades(const GradeRecord *grades,
                                            const char *student_id,
                                            GradeRecord *matches,
                                            size_t capacity,
-                                           size_t *count,
+                                           int *count,
                                            double *earned_credit_total)
 {
     /* 查询该学生的所有课程记录，并累加实得学分。 */
@@ -119,8 +119,8 @@ UtilityResult utility_record_grade(const char *student_file,
 {
     /* 确认学号存在并算出成绩后，再将记录追加到成绩文件。 */
     static Student students[UTILITY_MAX_RECORDS];
-    size_t student_count = 0;
-    size_t i;
+    int student_count = 0;
+    int i;
     int student_found = 0;
     UtilityResult result;
     FILE *file;

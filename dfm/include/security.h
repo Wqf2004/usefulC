@@ -105,8 +105,9 @@ void rule_init(InputRule *rule);
 void input_trim(char *s);                                
 int gbk_strlen(const char *s);                           
 VResult input_validate(char *s, const InputRule *rule); 
-const char *validate_msg(VResult r);                     
-int prompt_input(const char *tip, char *buf, int size);
+const char *validate_msg(VResult r);
+
+int prompt_input_ex(const char *tip, char *buf, int size, char mask);
 
 /* 把文件所有行读进 lines 二维数组并返回行数；文件不存在返回 0，文件最后一行无换行时补 '\n' */
 /* ========================================================================
@@ -130,7 +131,7 @@ int prompt_input(const char *tip, char *buf, int size);
 
 #define DELETED_MAX 1000 /* 单次会话最多记录的删行条数 */
 
-int file_undo_delete(void);
+    int file_undo_delete(void);
 int deleted_stack_count(void);
 int deleted_session_cleanup(void);
 

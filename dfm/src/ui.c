@@ -35,29 +35,65 @@ static void configure_data_paths(void)
     }
 }
 
-static int read_required(const char *prompt, char *buffer, size_t capacity,
-                         int token_only)
+/*
+ * 函数：read_required
+ * 功能：循环提示用户输入，直到获得一个满足条件的有效字符串；
+ *       如果输入流被关闭（如 EOF），则返回失败。
+ *
+ * 参数：
+ *   prompt     - 提示用户输入的字符串，例如 "请输入用户名: "
+ *   buffer     - 用于存放用户输入内容的字符数组
+ *   capacity   - buffer 的总容量（字节数），包括结尾的 '\0'
+ *   token_only - 若为非 0，表示输入中不能包含任何空白字符（空格、制表符等）；
+ *                若为 0，则允许包含空格
+ *
+ * 返回值：
+ *   1 - 成功读取到符合要求的输入
+ *   0 - 输入流已关闭（EOF），无法继续读取
+ *
+ * 说明：
+ *   - 输入为空或长度超过 capacity - 1 时，会提示错误并要求重新输入。
+ *   - 当 token_only 为真时，输入中若出现任何空白字符，也会提示错误并重新输入。
+ *   - 函数内部依赖全局变量 input_closed ，用于标记输入流是否已关闭。
+ *   - 调用者需保证 capacity > 1，否则任何输入都会被判为“过长”。
+ */
+static int read_required(const char *prompt, char *buffer, int capacity, int token_only, int ispassword)
 {
     int length;
 
-    for (;;) {
-        length = prompt_input(prompt, buffer, (int)capacity);
-        if (length < 0) {
+    for (;;) 
+    {
+        if (ispassword)
+        {
+            length = prompt_input_ex(prompt, buffer, capacity, '*');
+        }
+        else
+        {
+            length = prompt_input_ex(prompt, buffer, capacity, 0);
+        }
+        
+        if (length < 0) 
+        {
             input_closed = 1;
             return 0;
         }
-        if (length == 0 || (size_t)length >= capacity - 1) {
+        if (length == 0 || length >= capacity - 1) 
+        {
             puts("输入不能为空或过长。");
             continue;
         }
-        if (token_only) {
-            size_t i;
-            for (i = 0; i < (size_t)length; i++) {
-                if (isspace((unsigned char)buffer[i])) {
+        if (token_only) 
+        {
+            int i;
+            for (i = 0; i < length; i++) 
+            {
+                if (isspace((unsigned char)buffer[i])) 
+                {
                     break;
                 }
             }
-            if (i != (size_t)length) {
+            if (i != length) 
+            {
                 puts("该字段不能包含空格。");
                 continue;
             }
@@ -73,7 +109,7 @@ static int read_choice(const char *prompt, long minimum, long maximum, long *cho
     long value;
 
     for (;;) {
-        if (!read_required(prompt, buffer, sizeof(buffer), 1)) {
+        if (!read_required(prompt, buffer, sizeof(buffer), 1, 0)) {
             return 0;
         }
         errno = 0;
@@ -95,7 +131,7 @@ static int read_float(const char *prompt, float minimum, float maximum,
     float parsed;
 
     for (;;) {
-        if (!read_required(prompt, buffer, sizeof(buffer), 1)) {
+        if (!read_required(prompt, buffer, sizeof(buffer), 1, 0)) {
             return 0;
         }
         errno = 0;
@@ -147,7 +183,7 @@ static void find_student(void)
 {
     static Student students[UTILITY_MAX_RECORDS];
     Student student;
-    size_t count = 0;
+    int count = 0;
     char key[UTILITY_NAME_SIZE + 1];
     UtilityResult result;
 
@@ -156,7 +192,7 @@ static void find_student(void)
         show_result(result);
         return;
     }
-    if (!read_required("输入学号或姓名：", key, sizeof(key), 1)) {
+    if (!read_required("输入学号或姓名：", key, sizeof(key), 1, 0)) {
         return;
     }
     result = utility_find_student(students, count, key, &student);
@@ -171,9 +207,9 @@ static void find_students_by_dorm(void)
 {
     static Student students[UTILITY_MAX_RECORDS];
     static Student matches[UTILITY_MAX_RECORDS];
-    size_t student_count = 0;
-    size_t match_count = 0;
-    size_t i;
+    int student_count = 0;
+    int match_count = 0;
+    int i;
     char dorm[UTILITY_DORM_SIZE + 1];
     UtilityResult result;
 
@@ -183,7 +219,7 @@ static void find_students_by_dorm(void)
         show_result(result);
         return;
     }
-    if (!read_required("输入宿舍号：", dorm, sizeof(dorm), 1)) {
+    if (!read_required("输入宿舍号：", dorm, sizeof(dorm), 1, 0)) {
         return;
     }
     result = utility_find_students_by_dorm(students, student_count, dorm,
@@ -196,16 +232,16 @@ static void find_students_by_dorm(void)
     for (i = 0; i < match_count; i++) {
         print_student(&matches[i]);
     }
-    printf("共找到 %zu 名学生。\n", match_count);
+    printf("共找到 %d 名学生。\n", match_count);
 }
 
 static void query_student_grades(void)
 {
     static GradeRecord grades[UTILITY_MAX_RECORDS];
     static GradeRecord matches[UTILITY_MAX_RECORDS];
-    size_t grade_count = 0;
-    size_t match_count = 0;
-    size_t i;
+    int grade_count = 0;
+    int match_count = 0;
+    int i;
     double earned_credit_total = 0.0;
     char student_id[UTILITY_ID_SIZE + 1];
     UtilityResult result;
@@ -216,7 +252,7 @@ static void query_student_grades(void)
         show_result(result);
         return;
     }
-    if (!read_required("输入学号：", student_id, sizeof(student_id), 1)) {
+    if (!read_required("输入学号：", student_id, sizeof(student_id), 1, 0)) {
         return;
     }
     result = utility_get_student_grades(grades, grade_count, student_id, matches,
@@ -229,7 +265,7 @@ static void query_student_grades(void)
     for (i = 0; i < match_count; i++) {
         print_grade(&matches[i]);
     }
-    printf("共修 %zu 科，实得总学分：%.2f\n", match_count, earned_credit_total);
+    printf("共修 %d 科，实得总学分：%.2f\n", match_count, earned_credit_total);
 }
 
 static void record_grade(void)
@@ -240,9 +276,9 @@ static void record_grade(void)
     char course_name[UTILITY_COURSE_NAME_SIZE + 1];
     UtilityResult result;
 
-    if (!read_required("学号：", student_id, sizeof(student_id), 1) ||
-        !read_required("课程编号：", course_id, sizeof(course_id), 1) ||
-        !read_required("课程名称：", course_name, sizeof(course_name), 1) ||
+    if (!read_required("学号：", student_id, sizeof(student_id), 1, 0) ||
+        !read_required("课程编号：", course_id, sizeof(course_id), 1, 0) ||
+        !read_required("课程名称：", course_name, sizeof(course_name), 1, 0) ||
         !read_float("学分：", 0.0f, FLT_MAX, 0, &grade.credit) ||
         !read_float("平时成绩（0-100）：", 0.0f, 100.0f, 0, &grade.usual_score) ||
         !read_float("实验成绩（无实验输入 -1）：", -1.0f, 100.0f, 1,
@@ -271,9 +307,9 @@ static void delete_student(void)
     char confirmation[16];
 
     if (!read_required("输入要删除的学生学号：", student_id,
-                       sizeof(student_id), 1) ||
+                       sizeof(student_id), 1, 0) ||
         !read_required("确认删除？输入 y 确认，其它输入取消：",
-                       confirmation, sizeof(confirmation), 1)) {
+                       confirmation, sizeof(confirmation), 1, 0)) {
         return;
     }
     if (strcmp(confirmation, "y") != 0 && strcmp(confirmation, "Y") != 0) {
@@ -287,8 +323,8 @@ static void delete_student(void)
 static void sort_grades(void)
 {
     static GradeRecord grades[UTILITY_MAX_RECORDS];
-    size_t count = 0;
-    size_t i;
+    int count = 0;
+    int i;
     long key;
     long order;
     UtilityResult result;
@@ -318,9 +354,9 @@ static void show_course_statistics(void)
 {
     static GradeRecord grades[UTILITY_MAX_RECORDS];
     static CourseStatistic statistics[UTILITY_MAX_RECORDS];
-    size_t grade_count = 0;
-    size_t statistic_count = 0;
-    size_t i;
+    int grade_count = 0;
+    int statistic_count = 0;
+    int i;
     UtilityResult result;
 
     result = utility_load_grades(grade_file, grades, UTILITY_MAX_RECORDS,
@@ -335,7 +371,7 @@ static void show_course_statistics(void)
         return;
     }
     for (i = 0; i < statistic_count; i++) {
-        printf("课程：%s %s  人数：%zu  平均综合成绩：%.2f\n",
+        printf("课程：%s %s  人数：%d  平均综合成绩：%.2f\n",
                statistics[i].course_id, statistics[i].course_name,
                statistics[i].student_count, statistics[i].average_score);
     }
@@ -379,8 +415,9 @@ static void register_account(void)
     UtilityResult result;
 
     if (!read_required("用户名（3-32 位字母、数字或下划线）：",
-                       username, sizeof(username), 1) ||
-        !read_required("密码（8-128 字节）：", password, sizeof(password), 0)) {
+                       username, sizeof(username), 1, 0) ||
+        !read_required("密码（8-128 字节）：", password, sizeof(password), 0, 1)) 
+    {
         return;
     }
     result = utility_auth_register(user_file, username, password);
@@ -393,8 +430,9 @@ static void login_account(void)
     char password[130];
     UtilityResult result;
 
-    if (!read_required("用户名：", username, sizeof(username), 1) ||
-        !read_required("密码：", password, sizeof(password), 0)) {
+    if (!read_required("用户名：", username, sizeof(username), 1, 0) ||
+        !read_required("密码：", password, sizeof(password), 0, 1)) 
+    {
         return;
     }
     result = utility_auth_login(user_file, login_log_file, username, password);

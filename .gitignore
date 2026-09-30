@@ -56,3 +56,6 @@ dkms.conf
 
 # Project build output (dfm toolbox)
 /dfm/build/
+data/a.txt
+data/login.log
+data/users.txt

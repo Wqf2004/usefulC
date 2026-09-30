@@ -129,7 +129,7 @@ static int read_line(FILE *file, char *line, size_t size)
 }
 
 UtilityResult utility_load_students(const char *path, Student *students,
-                                      size_t capacity, size_t *count)
+                                      size_t capacity, int *count)
 {
     /* 逐行解析学生记录，并校验字段、手机号和数组容量。 */
     FILE *file;
@@ -209,7 +209,7 @@ static int parse_grade_fields(char **fields, GradeRecord *grade)
 }
 
 UtilityResult utility_load_grades(const char *path, GradeRecord *grades,
-                                    size_t capacity, size_t *count)
+                                    size_t capacity, int *count)
 {
     /* 逐行读取成绩记录，跳过可选表头并验证每一列。 */
     FILE *file;
@@ -312,7 +312,7 @@ UtilityResult utility_course_statistics(const GradeRecord *grades,
                                           size_t grade_count,
                                           CourseStatistic *statistics,
                                           size_t capacity,
-                                          size_t *count)
+                                          int *count)
 {
     /* 按课程编号汇总综合成绩，最后计算每门课的平均分。 */
     size_t course_count = 0;

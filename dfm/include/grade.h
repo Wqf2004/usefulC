@@ -23,7 +23,4 @@ float grade_calc_total(float usual, float lab, float exam);
 /* 实得学分：按综合成绩所在的等级段折算 */
 float grade_calc_credit(float credit, float total);
 
-/* 菜单演示：成绩录入完整流程（零直接 I/O，只走 file_op 封装） */
-void demo_grade_entry(void);
-
 #endif
